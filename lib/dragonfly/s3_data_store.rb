@@ -24,10 +24,9 @@ module Dragonfly
       @url_host = opts[:url_host]
       @use_iam_profile = opts[:use_iam_profile]
       @root_path = opts[:root_path]
-      @fog_storage_options = opts[:fog_storage_options] || {}
     end
 
-    attr_accessor :bucket_name, :access_key_id, :secret_access_key, :region, :storage_headers, :url_scheme, :url_host, :use_iam_profile, :root_path, :fog_storage_options
+    attr_accessor :bucket_name, :access_key_id, :secret_access_key, :region, :storage_headers, :url_scheme, :url_host, :use_iam_profile, :root_path
 
     def write(content, opts={})
       # ensure_configured
@@ -81,7 +80,13 @@ module Dragonfly
     private
 
     def s3_client
-      @s3_client ||= Aws::S3::Client.new
+      @s3_client ||= begin
+        opts = {}
+        opts[:region] = @region if @region
+        opts[:access_key_id] = @access_key_id if @access_key_id
+        opts[:secret_access_key] = @secret_access_key if @secret_access_key
+        Aws::S3::Client.new(opts)
+      end
     end
 
     def bucket
