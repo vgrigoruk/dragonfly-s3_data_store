@@ -1,5 +1,5 @@
 module Dragonfly
   class S3DataStore
-    VERSION = "1.2"
+    VERSION = "2.0"
   end
 end
