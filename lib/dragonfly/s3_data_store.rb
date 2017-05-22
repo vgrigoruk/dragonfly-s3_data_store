@@ -19,17 +19,16 @@ module Dragonfly
       @access_key_id = opts[:access_key_id]
       @secret_access_key = opts[:secret_access_key]
       @region = opts[:region]
-      @storage_headers = opts[:storage_headers] || {'x-amz-acl' => 'public-read'}
+      @acl = opts[:acl] || 'private'
+      @storage_class = opts[:storage_class] || 'STANDARD'
       @url_scheme = opts[:url_scheme] || 'http'
       @url_host = opts[:url_host]
-      @use_iam_profile = opts[:use_iam_profile]
       @root_path = opts[:root_path]
     end
 
-    attr_accessor :bucket_name, :access_key_id, :secret_access_key, :region, :storage_headers, :url_scheme, :url_host, :use_iam_profile, :root_path
+    attr_accessor :bucket_name, :access_key_id, :secret_access_key, :region, :url_scheme, :url_host, :root_path
 
     def write(content, opts={})
-      # ensure_configured
       ensure_bucket_initialized
       content_type = opts.delete(:content_type) { |_| content.mime_type }
       uid = opts[:path] || generate_uid(content.name || 'file')
@@ -38,13 +37,14 @@ module Dragonfly
                                         key: full_path(uid),
                                         content_type: content_type,
                                         metadata: content.meta,
-                                        body: f))
+                                        body: f,
+                                        acl: @acl,
+                                        storage_class: @storage_class))
       end
       uid
     end
 
     def read(uid)
-      # ensure_configured
       response = s3_client.get_object(bucket: bucket_name, key: full_path(uid))
       [response.body.read, response.metadata]
     rescue Aws::S3::Errors::NoSuchKey => _
@@ -91,19 +91,6 @@ module Dragonfly
 
     def bucket
       @bucket ||= Aws::S3::Resource.new.bucket(bucket_name)
-    end
-
-    def ensure_configured
-      # unless @configured
-      #   if use_iam_profile
-      #     raise NotConfigured, "You need to configure #{self.class.name} with bucket_name" if bucket_name.nil?
-      #   else
-      #     [:bucket_name, :access_key_id, :secret_access_key].each do |attr|
-      #       raise NotConfigured, "You need to configure #{self.class.name} with #{attr}" if send(attr).nil?
-      #     end
-      #   end
-      #   @configured = true
-      # end
     end
 
     def ensure_bucket_initialized

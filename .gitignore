@@ -16,4 +16,5 @@ test/tmp
 test/version_tmp
 tmp
 .s3_spec.yml
-
+.idea/
+.ruby-version
